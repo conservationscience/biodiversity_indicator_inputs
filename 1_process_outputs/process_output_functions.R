@@ -1,6 +1,9 @@
 ##Needs R version 3.3.2 for sds package to work (but .nc versions of functions 
 # run on package ncdf4 and should work with later versions)
 
+# https://github.com/conservationscience/model_outputs_to_indicator_inputs.git
+
+
 # install.packages("packrat")
 # install.packages("sds")
 # install.packages("dplyr")
@@ -19,7 +22,6 @@
 # library(ncdf4)
 # library(tidyverse)
 # library(stringr)
-
 
 #### General Functions #####
 
@@ -1302,18 +1304,24 @@ save.and.date <- function(your.object, filename){
   
 }
 
-PlotCells<-function(resultsDir,outDir=NULL,map="World"){
+
+PlotCells <- function(inputs,outDir=NULL,map=location){
   
-  if (map == "Africa"){
-    data(Africa)
+  
+  if (map == "Africa") {
+    
+    outline<-readOGR("N:/Quantitative-Ecology/Indicators-Project/Madingley_setup_data/MadingleyPlots/data","Africa",verbose = FALSE)
+    
   } else {
-    data(World)
+    
+    outline<-readOGR("N:/Quantitative-Ecology/Indicators-Project/Madingley_setup_data/MadingleyPlots/data","World",verbose = FALSE)
   }
   
-  locations<-read.csv(paste(resultsDir,"/SpecificLocations.csv",sep=""))
+  locations <- read.csv(paste(inputs,"/SpecificLocations.csv",sep=""))
   
   if (!is.null(outDir)){
-    pdf(paste(outDir,"CellsMap.pdf",sep=""),
+    
+    pdf(paste(outDir,"_CellsMap.pdf",sep=""),
         width = 12.5/2.54,height=6.25/2.54)
   }
   
@@ -1338,41 +1346,6 @@ save_plot <- function(inputs, outputs, reference, location){
   scenario <- sub("BasicOutputs_", "", files[1])
   scenario <- sub("_0_Cell0.nc", "", scenario)
   
-  
-  
-  PlotCells <- function(inputs,outDir=NULL,map=location){
-    
-    
-    if (map == "Africa") {
-      
-      outline<-readOGR("N:/Quantitative-Ecology/Indicators-Project/Madingley_setup_data/MadingleyPlots/data","Africa",verbose = FALSE)
-      
-    } else {
-      
-      outline<-readOGR("N:/Quantitative-Ecology/Indicators-Project/Madingley_setup_data/MadingleyPlots/data","World",verbose = FALSE)
-    }
-    
-    locations <- read.csv(paste(inputs,"/SpecificLocations.csv",sep=""))
-    
-    if (!is.null(outDir)){
-      pdf(paste(outDir,"CellsMap.pdf",sep=""),
-          width = 12.5/2.54,height=6.25/2.54)
-    }
-    
-    
-    par(mar=c(0,0,0,0))
-    
-    plot(outline)
-    
-    points(locations$Longitude,locations$Latitude,pch=16,col="red")
-    
-    text(locations$Longitude,locations$Latitude,1:dim(locations)[1],pos=2)
-    
-    if (!is.null(outDir)) invisible(dev.off())
-    
-  }
-  
-  
   # plotName <- paste(reference, "_", scenario, "_map",".tiff",sep="")
   # tiff(file = (paste(outputs,plotName, sep = "/")), units ="in", width=10, height=5, res=200)
   
@@ -1391,9 +1364,9 @@ save_plot <- function(inputs, outputs, reference, location){
  
   dev.off()
   
-  map <- PlotCells(inputs, outputs, map="Africa")
-  
-  return(map)
+  # map <- PlotCells(inputs, outputs, map="Africa")
+  # 
+  # return(map)
   
 }
 
