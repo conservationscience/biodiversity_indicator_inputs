@@ -3,6 +3,8 @@
 
 # https://github.com/conservationscience/model_outputs_to_indicator_inputs.git
 
+# cd C:\\Users\\ssteven\\Dropbox\\Deakin\\Serengeti-analysis\\model_outputs_to_indicator_inputs
+
 
 # install.packages("packrat")
 # install.packages("sds")
@@ -1304,9 +1306,9 @@ save.and.date <- function(your.object, filename){
   
 }
 
-
-PlotCells <- function(inputs,outDir=NULL,map=location){
+PlotCells <- function(inputs,outDir=NULL,simulation_number,map){
   
+  require(rgdal)
   
   if (map == "Africa") {
     
@@ -1321,7 +1323,7 @@ PlotCells <- function(inputs,outDir=NULL,map=location){
   
   if (!is.null(outDir)){
     
-    pdf(paste(outDir,"_CellsMap.pdf",sep=""),
+    pdf(paste(outDir, "/", simulation_number, "_CellsMap.pdf",sep=""),
         width = 12.5/2.54,height=6.25/2.54)
   }
   
@@ -1338,7 +1340,7 @@ PlotCells <- function(inputs,outDir=NULL,map=location){
   
 }
 
-save_plot <- function(inputs, outputs, reference, location){
+save_plot <- function(inputs, outputs, simulation_number, map){
   
   require(rgdal)
   
@@ -1346,27 +1348,22 @@ save_plot <- function(inputs, outputs, reference, location){
   scenario <- sub("BasicOutputs_", "", files[1])
   scenario <- sub("_0_Cell0.nc", "", scenario)
   
-  # plotName <- paste(reference, "_", scenario, "_map",".tiff",sep="")
-  # tiff(file = (paste(outputs,plotName, sep = "/")), units ="in", width=10, height=5, res=200)
+  # Save plot of coordinates of modelled grid cell
+  PlotCells(inputs, outputs, simulation_number, map)
+ 
+   #Set up tiff file save for plot
   
-  PlotCells(inputs, outputs, "Africa")
-  #Set up tiff file save for plot
-  
-  plotName <- paste(reference, "_", scenario, "_biomass",".tiff",sep="")
+  plotName <- paste(simulation_number, "_", scenario, "_biomass",".tiff",sep="")
   tiff(file = (paste(outputs,plotName, sep = "/")), units ="in", width=10, height=5, res=200)
   
   # Plot biomass over time
   biomassPlot <- PlotTemporal.nc(inputs, label = scenario, "Temporal Biomass Plot")
   
-  print(paste("plot of ",scenario, " output biomass saved to output folder", sep = ""))
+  print(paste("plot of ",simulation_number, "_", scenario, " output biomass saved to output folder", sep = ""))
 
   #turn off devices
  
   dev.off()
-  
-  # map <- PlotCells(inputs, outputs, map="Africa")
-  # 
-  # return(map)
   
 }
 
