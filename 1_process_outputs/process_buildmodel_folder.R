@@ -1,5 +1,5 @@
 
-# https://github.com/KateWatermeyer/BiodiversityIndicators-project-code.git
+# https://github.com/conservationscience/model_outputs_to_indicator_inputs.git
 
 # extract relevant data from each replicate
 # NOTE - run process_species_list before this function
@@ -9,15 +9,25 @@
 # output folder should be:
 # Indicators-Project/[name of region]/Outputs_from_adaptor_code/[name of species list file]/[name of scenario]
 # 
+# 
+
+
 process_buildmodel_folder <- function( buildmodel_folder, output_folder ) {
+  
+  # Check if the folder has already been processed
+  
+  folder_name <- basename(buildmodel_folder)
+  output_folder_exists <- folder_name %in% list.dirs( output_folder, full.names = FALSE, recursive = FALSE )
+  processing_complete <- "groups.csv" %in% list.files(file.path(output_folder, folder_name))
+
+  if (!processing_complete) {
   
   # load comparable taxa
   comparable_taxa <- readRDS( file.path( dirname( output_folder ), "comparable_taxa.rds" ) )
   
+  
   # add the [XX]_BuildModel folder to the output folder, so that batches of replicates are separated
   output_folder <- file.path( output_folder, basename( buildmodel_folder ) )
-  
-  dir.create( output_folder )
   
   # get name of the folder containing the replicates
   directories <- list.dirs( buildmodel_folder, full.names = FALSE, recursive = FALSE )
@@ -97,7 +107,7 @@ process_buildmodel_folder <- function( buildmodel_folder, output_folder ) {
     input_file_path <- file.path( replicate_folder, file )
     autotroph_output_file_path <- file.path( output_folder, sub( ".nc", "_autotroph.rds", file ) )
     
-    cat( paste0( "processing file ", i, " of ", length( basicoutput_files ), "...\n") )
+    cat( paste0( "processing", folder_name, "file", i, " of ", length( basicoutput_files ), "...\n") )
     
     log_autotroph_biomass_through_time <- madingley_get_autotroph_biomass( input_file_path )
     saveRDS( log_autotroph_biomass_through_time, file = autotroph_output_file_path )
@@ -112,4 +122,11 @@ process_buildmodel_folder <- function( buildmodel_folder, output_folder ) {
   }
   cat( "done\n" )
   rm( i )
+  
+  } else {
+
+    print(paste(folder_name, "folder has already been processed", sep = " "))
+
+  }
 }
+
