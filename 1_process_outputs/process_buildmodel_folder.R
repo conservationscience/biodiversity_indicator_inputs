@@ -107,7 +107,7 @@ process_buildmodel_folder <- function( buildmodel_folder, output_folder ) {
     input_file_path <- file.path( replicate_folder, file )
     autotroph_output_file_path <- file.path( output_folder, sub( ".nc", "_autotroph.rds", file ) )
     
-    cat( paste0( "processing", folder_name, "file", i, " of ", length( basicoutput_files ), "...\n") )
+    cat( paste0( "processing ", folder_name, " file", i, " of ", length( basicoutput_files ), "...\n") )
     
     log_autotroph_biomass_through_time <- madingley_get_autotroph_biomass( input_file_path )
     saveRDS( log_autotroph_biomass_through_time, file = autotroph_output_file_path )
