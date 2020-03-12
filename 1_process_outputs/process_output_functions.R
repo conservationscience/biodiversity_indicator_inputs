@@ -1340,9 +1340,14 @@ PlotCells <- function(inputs,outDir=NULL,simulation_number,map){
   
 }
 
-save_plot <- function(inputs, outputs, simulation_number, map){
+save_plot <- function(inputs, outputs, simulation_number, map) {
   
   require(rgdal)
+  
+  existing_plots <- grepl("biomass.tiff", list.files(outputs))
+  plotting_complete <- any(existing_plots = TRUE)
+  
+  if (!plotting_complete) {
   
   files <- list.files(inputs)
   scenario <- sub("BasicOutputs_", "", files[1])
@@ -1364,6 +1369,14 @@ save_plot <- function(inputs, outputs, simulation_number, map){
   #turn off devices
  
   dev.off()
+  
+  } else {
+    
+    folder_name <- basename(outputs)
+    
+    print(paste(folder_name, "outputs have already been plotted and saved", sep = " "))
+    
+  }
   
 }
 
