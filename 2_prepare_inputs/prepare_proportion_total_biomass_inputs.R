@@ -2,10 +2,10 @@
 
 #' Return a dataframe that ...
 
-#' @param indicators_project file path where all project data is kept
-#' @param scenario string that denotes which impact directory you want to look in
-#' @param simulation_number string that denotes which simulation directory you 
-#' want to prepare the data from
+#' @param inputs file path for an individual, processed dataframe
+#' @param outputs file path where you would like to store your outputs
+#' @param simulation_number string that denotes the simulation number the data came from (eg "001")
+#' @param replicate_number string that denotes what number replicate within the simulation the data is
 #' @param variable string that denotes whether you want to use abundance or biomass
 #' @param burnin integer, specifies how many burnin timesteps to remove
 #' @param interval integer, specifies how many monthly timesteps you want to 
@@ -24,53 +24,35 @@
 #' 12 and mean respectively) unless specified.
 #' 
 
-# indicators_project <- "N:/Quantitative-Ecology/Indicators-Project/" # File path for entire project directory
-# location <- 'Serengeti' # Modelled location you want to process
-# scenario <- 'Test_runs' # Scenario you want to process
-# simulation <- 'aa_BuildModel/' # Model simulation number aka 'BuildModel' directory you want to process
-# burnin <- 0.5*12 # number of years burn in * 12 (to convert to monthly)
-# simulation_number <- "aa" # Number of your buildmodel file
-# variable <- "adult_biomass"
+# indicator <- "proportion_total_biomass"
+# variable <- "biomass"
 # interval <- 3
 # func <- mean
+# simulation_number <- "ae"
+# replicate_numbers <- 0: (length(test_input) - 1)
+# replicate_number <- as.character(replicate_numbers[1])
+# test_input <- "N:/Quantitative-Ecology/Indicators-Project/Serengeti/Outputs_from_adaptor_code/map_of_life/Test_runs/ae_BuildModel/MassBinsOutputs_NI_0_Cell0_biomass.rds"
+# test_output <- file.path(IndicatorsProject, location, "Outputs_from_indicator_code/inputs", indicator,
+#                          scenarios[1])
+# x <- prepare_proportion_total_biomass_inputs(test_input, test_output,simulation_number, 
+#                                              cell_number, variable, 
+#                                              burnin, interval, func )
 
-prepare_proportion_total_biomass_inputs <- function(indicators_project, scenario, simulation_number, variable, burnin, interval, func){
+prepare_proportion_total_biomass_inputs <- function(inputs, outputs, simulation_number, 
+                                                    cell_number, variable, 
+                                                    burnin, interval, func){
   
   require(stringr)
   require(tidyverse)
   require(reshape2)
   
+  scenario <- basename(outputs)
   
-  # Find data
-  
-  all_scenario_folders <- list.dirs(file.path(indicators_project, "Serengeti",
-                                              "Outputs_from_adaptor_code",
-                                              "map_of_life"), recursive = FALSE)
-  
-  target_scenario_folder <- str_subset(all_scenario_folders, scenario)
-  
-  scenario_simulation_folders <- list.dirs(target_scenario_folder, recursive = FALSE)
-  
-  processed_simulation_outputs <- str_subset(scenario_simulation_folders, simulation_number )
-  
-  all_files <- list.files(processed_simulation_outputs)
-  
-  target_files <- str_subset(all_files, variable)
-  target_rds_files <- target_files[!str_detect(target_files, ".csv")]
-  
-  replicates <- list()
-  
-  for (i in seq_along(target_rds_files)) {
-    
-  replicates[[i]] <- readRDS(file.path(processed_simulation_outputs, target_rds_files[[i]]))
-  
-  }
+  replicate <- readRDS(input)
   
   # Create or set output folder
   
-  output_folder <- file.path(indicators_project, 
-                             "/Serengeti/Outputs_from_indicator_code",
-                             paste(scenario, "indicator_outputs" , sep ="_"))
+  output_folder <- outputs
   
   if( !dir.exists( file.path(output_folder) ) ) {
     dir.create( file.path(output_folder), recursive = TRUE )
@@ -85,7 +67,9 @@ prepare_proportion_total_biomass_inputs <- function(indicators_project, scenario
       
   }
     
-  replicates_no_burnin <- lapply(replicates, remove_burn_in, burnin )
+  #replicates_no_burnin <- lapply(replicates, remove_burn_in, burnin )
+  
+  replicate_no_burnin <- remove_burn_in(replicate, burnin)
 
   # Function to convert monthly timesteps to yearly by taking the mean of a specified interval (12 to convert monthly to yearly)
     
@@ -110,27 +94,19 @@ prepare_proportion_total_biomass_inputs <- function(indicators_project, scenario
     
     if (interval > 1) {
       
-      time_converted_replicates <- list()
-      
-      for (i in seq_along(replicates_no_burnin)) {
-        
-        time_converted_replicates[[i]] <- 
-          convert_timesteps(replicates_no_burnin[[i]], interval, func)
-      }
-      
-      proportion_total_biomass_inputs <- time_converted_replicates
+      proportion_total_biomass_inputs <- convert_timesteps(replicate_no_burnin, interval, func)
       
       saveRDS( proportion_total_biomass_inputs, file = file.path(output_folder,
-      paste(scenario, simulation_number, "proportion_total_biomass_inputs", sep = "_" )))
+      paste(scenario, simulation_number, cell_number, "proportion_total_biomass_inputs", sep = "_" ))) 
       
       return(proportion_total_biomass_inputs)
      
     } else if (interval == 1 ) {
       
-      proportion_total_biomass_inputs <- replicates_no_burnin
+      proportion_total_biomass_inputs <- replicate_no_burnin
       
       saveRDS( proportion_total_biomass_inputs, 
-               file = file.path(output_folder,paste(scenario, simulation_number, 
+               file = file.path(output_folder,paste(scenario, simulation_number, cell_number,  
                "proportion_total_biomass_inputs", sep = "_" )))
      
       return(proportion_total_biomass_inputs)
@@ -138,17 +114,7 @@ prepare_proportion_total_biomass_inputs <- function(indicators_project, scenario
     }
 }
     
- 
-  
-  # Take the mean of all replicates to create one dataframe of proportion biomass
-  # at each annual timestep
-  
-  # proportion_total_biomass <-  proportion_total_biomass_replicate_df %>%
-  #                              mutate(relative_proportion_biomass = 
-  #                              rowMeans(proportion_total_biomass_replicate_df,
-  #                                             na.rm = TRUE)) %>%
-  #                              mutate(year = c(1:nrow(proportion_total_biomass_replicate_df))) %>%
-  #                              select(relative_proportion_biomass, year)
+
   
   
 
