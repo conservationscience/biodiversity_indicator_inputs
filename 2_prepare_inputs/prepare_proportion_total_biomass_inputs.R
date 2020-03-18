@@ -6,7 +6,6 @@
 #' @param outputs file path where you would like to store your outputs
 #' @param simulation_number string that denotes the simulation number the data came from (eg "001")
 #' @param replicate_number string that denotes what number replicate within the simulation the data is
-#' @param variable string that denotes whether you want to use abundance or biomass
 #' @param burnin integer, specifies how many burnin timesteps to remove
 #' @param interval integer, specifies how many monthly timesteps you want to 
 #' aggregate by.  Should usually be 12 if you want to convert monthly to annual
@@ -35,12 +34,11 @@
 # test_output <- file.path(IndicatorsProject, location, "Outputs_from_indicator_code/inputs", indicator,
 #                          scenarios[1])
 # x <- prepare_proportion_total_biomass_inputs(test_input, test_output,simulation_number, 
-#                                              cell_number, variable, 
+#                                              cell_number, 
 #                                              burnin, interval, func )
 
 prepare_proportion_total_biomass_inputs <- function(inputs, outputs, simulation_number, 
-                                                    cell_number, variable, 
-                                                    burnin, interval, func){
+                                                    replicate_number, burnin, interval, func){
   
   require(stringr)
   require(tidyverse)
@@ -48,7 +46,7 @@ prepare_proportion_total_biomass_inputs <- function(inputs, outputs, simulation_
   
   scenario <- basename(outputs)
   
-  replicate <- readRDS(input)
+  replicate <- readRDS(inputs)
   
   # Create or set output folder
   
@@ -97,7 +95,7 @@ prepare_proportion_total_biomass_inputs <- function(inputs, outputs, simulation_
       proportion_total_biomass_inputs <- convert_timesteps(replicate_no_burnin, interval, func)
       
       saveRDS( proportion_total_biomass_inputs, file = file.path(output_folder,
-      paste(scenario, simulation_number, cell_number, "proportion_total_biomass_inputs", sep = "_" ))) 
+      paste(scenario, simulation_number, replicate_number, "proportion_total_biomass_inputs", sep = "_" ))) 
       
       return(proportion_total_biomass_inputs)
      
