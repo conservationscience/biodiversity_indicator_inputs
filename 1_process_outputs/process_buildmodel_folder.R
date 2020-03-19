@@ -29,6 +29,12 @@ process_buildmodel_folder <- function( buildmodel_folder, output_folder ) {
   # add the [XX]_BuildModel folder to the output folder, so that batches of replicates are separated
   output_folder <- file.path( output_folder, basename( buildmodel_folder ) )
   
+  if( !dir.exists( file.path(output_folder) ) ) {
+    
+    dir.create( file.path(output_folder), recursive = TRUE )
+    
+  }
+  
   # get name of the folder containing the replicates
   directories <- list.dirs( buildmodel_folder, full.names = FALSE, recursive = FALSE )
   replicate_folder = file.path( buildmodel_folder, directories[!(directories %in% c("input"))] )
