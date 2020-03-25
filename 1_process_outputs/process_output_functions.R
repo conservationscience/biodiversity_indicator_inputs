@@ -1345,9 +1345,9 @@ save_plot <- function(inputs, outputs, simulation_number, map) {
   require(rgdal)
   
   existing_plots <- grepl("biomass.tiff", list.files(outputs))
-  plotting_complete <- any(existing_plots = TRUE)
+  #plotting_complete <- (length(existing_plots) == 0)
   
-  if (!plotting_complete) {
+  if (existing_plots == FALSE) {
   
   files <- list.files(inputs)
   scenario <- sub("BasicOutputs_", "", files[1])
