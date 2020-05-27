@@ -43,6 +43,7 @@ n <- 120
 
 }
 
+# Get heterotroph data ----
 
 files <- list.files(simulation_path, recursive = FALSE) 
 
@@ -72,7 +73,7 @@ for (i in seq_along(simulation_abundance_data)) {
 
 rm(temp)
 
-# Convert back into matrices and melt into long format
+# Melt into long format
 
 subset_simulation_data_long <- lapply(subset_simulation_data, melt)
 
@@ -157,5 +158,94 @@ for (i in seq_along(abundance_plots)) {
 
 }
 
-# ggsave("C:\\Users\\ssteven\\Dropbox\\Deakin\\Serengeti-analysis\\herb303test1.pdf", abundance_plots[[1]],  device = "pdf")
-# ggsave("C:\\Users\\ssteven\\Dropbox\\Deakin\\Serengeti-analysis\\herb303test2.4.pdf", abundance_plots[[2]],  device = "pdf")
+# Get autotroph data ----
+
+autotroph_files <- paste(simulation_path, files[str_detect(files, "autotroph.rds")], sep = "\\")
+
+auto_names_pt_2 <- unlist(lapply(autotroph_files, basename))
+
+auto_plot_names <- paste(name_pt_1, auto_names_pt_2, sep = "_")
+
+simulation_auto_data <- lapply(autotroph_files, readRDS)
+
+simulation_auto_data <- lapply(simulation_auto_data, as.matrix)
+
+# Remove burn in and sample every n years to reduce data for plotting
+
+subset_simulation_auto_data <- list()
+
+for (i in seq_along(simulation_auto_data)) {
+  
+  temp <- simulation_auto_data[[i]][,burnin:ncol(simulation_auto_data[[i]])]
+  
+  sample <- seq(1, ncol(temp), by = n)
+  
+  subset_simulation_auto_data[[i]] <- temp[,sample]
+  
+}
+
+rm(temp)
+
+# Melt into long format
+
+subset_simulation_auto_data_long <- lapply(subset_simulation_auto_data, melt)
+
+# Replace no value with NA
+
+for (i in seq_along(subset_simulation_auto_data_long)) {
+  
+  subset_simulation_auto_data_long[[i]][subset_simulation_auto_data_long[[i]] == -9999] <- NA
+  
+}
+
+head(subset_simulation_auto_data_long[[1]])
+
+# Name columns to prepare data for plotting
+
+auto_plot_data <- list()
+
+for (i in seq_along(subset_simulation_auto_data_long)) {
+  
+  names(subset_simulation_auto_data_long[[i]]) <- c("functional_group", 
+                                                    "timestep", "biomass")
+  
+  auto_plot_data[[i]] <- subset_simulation_auto_data_long[[i]] %>%
+                         mutate(new_timestep = as.numeric(substring(timestep,2)))
+  
+  
+}
+
+head(auto_plot_data[[1]])
+class(auto_plot_data[[1]]$new_timestep)
+
+# Plot
+
+autotroph_plots <- list()
+
+for (i  in seq_along(auto_plot_data)) {
+  
+  autotroph_plots[[i]] <- ggplot() +
+    geom_path(aes(y = biomass, x = new_timestep, colour = functional_group),
+              data =  auto_plot_data[[i]]) +
+    theme(legend.position = "right") +
+    geom_vline(xintercept = 12*1100, color = "red") +
+    geom_vline(xintercept = 12*1200 , color = "dark green") +
+    #facet_wrap(~ functional_group_name, ncol = 3) +
+    ggtitle(plot_names[[i]])
+  
+  autotroph_plots[[i]]
+  
+}
+
+
+autotroph_plots[[1]]
+autotroph_plots[[2]]
+autotroph_plots[[3]]
+autotroph_plots[[4]]
+autotroph_plots[[5]]
+
+for (i in seq_along(abundance_plots)) {
+  
+  ggsave(file.path(output_path, paste(auto_plot_names[[i]],".pdf")), autotroph_plots[[i]])
+  
+}
