@@ -6,6 +6,8 @@
 
 
 #' TODO: Automate the vertical lines representing impact start and end
+#' TODO: IMPORTANT - add a plot that takes the mean of all replicates and adds
+#' confidence intervals
 #' 
 #' This function plots the model outputs by functional group so you can have a 
 #' quick look at the outputs in more detail than the log biomass plot that
@@ -73,7 +75,7 @@ output_path <- file.path(simulation_path, paste(simulation_number,
 
 if( !dir.exists( file.path(output_path) ) ) {
   
-  dir.create( file.path(output_path), recursive = TRUE )
+dir.create( file.path(output_path), recursive = TRUE )
 
 # Find files
 
@@ -375,8 +377,8 @@ for (i  in seq_along(auto_plot_data)) {
     geom_path(aes(y = biomass, x = new_timestep, colour = functional_group),
               data =  auto_plot_data[[i]]) +
     theme(legend.position = "right") +
-    geom_vline(xintercept = 10, color = "red") +
-    geom_vline(xintercept = 30 , color = "dark green") +
+    geom_vline(xintercept = 12*1100, color = "red") +
+    geom_vline(xintercept = 12*1200 , color = "dark green") +
     ggtitle(auto_plot_names[[i]])
   
   autotroph_plots[[i]]
@@ -396,6 +398,9 @@ for (i in seq_along(biomass_plots)) {
   
 }
 
+
+print(paste("Plots for", simulation_number, 
+            "saved to functional group plots folder"))
 } else {
   
   print(paste("Functional group plots for Simulation", simulation_number, 
