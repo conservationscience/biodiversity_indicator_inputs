@@ -42,7 +42,7 @@
 # simulation_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life\\Test_runs\\ae_BuildModel"
 # output_path <- simulation_path
 # simulation_number <- "ae"
-#   
+# 
 # burnin <- 0
 # startimpact <- 12
 # endimpact <- 24
@@ -307,6 +307,86 @@ for (i in seq_along(biomass_plots)) {
   
 }
 
+# Plot mean biomass ----
+
+for (i in seq_along(subset_biomass_simulation_data)) {
+  
+  subset_biomass_simulation_data[[i]][subset_biomass_simulation_data[[i]] == -9999] <- NA
+  
+}
+
+mean_biomass <- Reduce('+', subset_biomass_simulation_data)/length(subset_biomass_simulation_data)
+
+# f1 <- function(lst) { 
+#  
+#   n <- length(lst); 
+#   rc <- dim(lst[[1]]); 
+#   ar1 <- array(unlist(lst), c(rc, n)); 
+#   sd <- round(apply(ar1, c(1, 2), sd), 2); 
+#   return(sd)
+# }
+# 
+# sd_biomass <- f1(subset_biomass_simulation_data)
+# 
+# lower_bounds_biomass <- mean_biomass - (1.96 * sd_biomass)
+# upper_bounds_biomass <- mean_biomass + (1.96 * sd_biomass)
+
+mean_biomass_long <- melt(mean_biomass)
+names(mean_biomass_long) <- c("functional_group", "timestep", "mean_biomass")
+mean_biomass_plot_data <- mean_biomass_long
+
+# lower_bounds_biomass_long <- melt(lower_bounds_biomass)
+# names(lower_bounds_biomass_long) <- c("functional_group_l", "timestep_l", "lower_bound")
+# 
+# upper_bounds_biomass_long <- melt(upper_bounds_biomass)
+# names(upper_bounds_biomass_long) <- c("functional_group_u", "timestep_u", "upper_bound")
+# 
+# mean_biomass_plot_data <- cbind(mean_biomass_long, lower_bounds_biomass_long,
+#                                 upper_bounds_biomass_long)
+
+test <- mean_biomass_plot_data %>%
+  # dplyr::select(functional_group, timestep, mean_biomass, upper_bound, 
+  #               lower_bound) %>%
+  mutate(bodymass_bin = str_sub(functional_group, start= -2)) %>%
+  mutate(group = str_sub(mean_biomass_plot_data$functional_group, 
+                         start = 1, end = 2)) %>%
+  arrange(functional_group, timestep) %>%
+  group_by(group, timestep) %>%
+  dplyr::summarise(group_mean = 
+                     mean(mean_biomass, na.rm = TRUE),
+                   group_sd = sd(mean_biomass, na.rm = TRUE),
+                   n = n(),
+                   group_se = group_sd/sqrt(n),
+                   group_lb = group_mean - 1.96 * group_se,
+                   group_ub = group_mean + 1.96 * group_se) %>%
+  mutate(functional_group_name = ifelse(group == 10, "herbivorous endotherms",
+                                        ifelse(group == 11, "carnivorous  endotherms",
+                                               ifelse(group == 12, "omnivorous  endotherms",
+                                                      ifelse(group == 13, "herbivorous ectotherms", # combine iteroparous and semelparous ectotherms
+                                                             ifelse(group == 14, "carnivorous ectotherms",
+                                                                    ifelse(group == 15, "omnivorous ectotherms", 
+                                                                           "NA"))))))) 
+
+mean_biomass_plot <- ggplot() +
+  geom_path(aes(y = group_mean, x = timestep, 
+                colour = functional_group_name),
+            data =  test) +
+  theme(legend.position = "none") +
+  geom_vline(xintercept = 12*1, color = "red") +
+  geom_vline(xintercept = 12*2 , color = "dark green") +
+  ggtitle("Mean Biomass") +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank()) +
+  facet_wrap( ~ functional_group_name)
+
+mean_biomass_plot
+
+test_plot <- mean_biomass_plot + geom_ribbon(aes(x = timestep,ymin = group_lb, 
+                                                 ymax = group_ub, fill = functional_group_name), 
+                                             alpha = 0.2, data = test) 
+test_plot
+
 # Plot autotroph biomass ----
 
 autotroph_files <- paste(simulation_path, files[str_detect(files, "autotroph.rds")], 
@@ -408,3 +488,5 @@ print(paste("Plots for", simulation_number,
 }
 
 }
+
+
