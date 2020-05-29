@@ -23,19 +23,19 @@
 #' 12 and mean respectively) unless specified.
 #' 
 
-# indicator <- "proportion_total_biomass"
-# variable <- "biomass"
-# interval <- 3
-# func <- mean
-# simulation_number <- "ae"
-# replicate_numbers <- 0: (length(test_input) - 1)
-# replicate_number <- as.character(replicate_numbers[1])
-# test_input <- "N:/Quantitative-Ecology/Indicators-Project/Serengeti/Outputs_from_adaptor_code/map_of_life/Test_runs/ae_BuildModel/MassBinsOutputs_NI_0_Cell0_biomass.rds"
-# test_output <- file.path(IndicatorsProject, location, "Outputs_from_indicator_code/inputs", indicator,
-#                          scenarios[1])
-# x <- prepare_proportion_total_biomass_inputs(test_input, test_output,simulation_number, 
-#                                              cell_number, 
-#                                              burnin, interval, func )
+indicator <- "proportion_total_biomass"
+variable <- "biomass"
+interval <- 3
+burnin <- 0
+func <- mean
+simulation_number <- "ae"
+replicate_numbers <- 0:1
+replicate_number <- as.character(replicate_numbers[1])
+inputs <- "N:/Quantitative-Ecology/Indicators-Project/Serengeti/Outputs_from_adaptor_code/map_of_life/Test_runs/ae_BuildModel/MassBinsOutputs_NI_0_Cell0_biomass.rds"
+outputs <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_indicator_code\\Indicator_inputs\\proportion_total_biomass\\Test_runs\\"
+
+x <- prepare_proportion_total_biomass_inputs(test_input, test_output,simulation_number,
+                                             replicate_number,burnin, interval, func )
 
 prepare_proportion_total_biomass_inputs <- function(inputs, outputs, simulation_number, 
                                                     replicate_number, burnin, interval, func){
@@ -47,6 +47,8 @@ prepare_proportion_total_biomass_inputs <- function(inputs, outputs, simulation_
   scenario <- basename(outputs)
   
   replicate <- readRDS(inputs)
+  
+  replicate[replicate == -9999] <- NA
   
   # Create or set output folder
   
@@ -78,7 +80,8 @@ prepare_proportion_total_biomass_inputs <- function(inputs, outputs, simulation_
       n <- interval
       
       time_converted_matrix <- t(aggregate(monthly_matrix,list(rep(1:(nrow(monthly_matrix) %/% 
-                                                                        n + 1), each = n, len = nrow(monthly_matrix))), func, na.rm = TRUE))
+                                 n + 1), each = n, len = nrow(monthly_matrix))), 
+                                 func, na.rm = TRUE))
       
       time_converted_matrix <- time_converted_matrix[-1,]
       
