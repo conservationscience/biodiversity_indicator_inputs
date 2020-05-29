@@ -2,12 +2,8 @@
 # Git repo "C:\\Users\\ssteven\\Dropbox\\Deakin\\Serengeti-analysis\\model_outputs_to_indicator_inputs\\1_process_outputs"
 
 
-
-
-
 #' TODO: Automate the vertical lines representing impact start and end
-#' TODO: IMPORTANT - add a plot that takes the mean of all replicates and adds
-#' confidence intervals
+#' TODO: IMPORTANT - add a plot of mean autototroph values
 #' 
 #' This function plots the model outputs by functional group so you can have a 
 #' quick look at the outputs in more detail than the log biomass plot that
@@ -83,17 +79,16 @@ files <- list.files(simulation_path, recursive = FALSE)
 
 # Plot log abundance of functional groups ----
 
-abundance_files <- paste(simulation_path, files[str_detect(files, "abundance.rds")], sep = "\\")
-replicate_numbers <- 0:(length(abundance_files) - 1)
+abundance_files <- paste(simulation_path, files[str_detect(files, 
+                                                           "abundance.rds")], 
+                         sep = "\\")
 
-#abundance_files <- abundance_files[1:2] # TEMP CODE - subset so you don't read everything in
+replicate_numbers <- 0:(length(abundance_files) - 1)
 
 plot_names <- paste("Simulation", simulation_number, "replicate", replicate_numbers, 
                     "log abundance by heterotrophic functional group", sep = " ")
 
 simulation_abundance_data <- lapply(abundance_files, readRDS)
-
-#simulation_abundance_data <- lapply(simulation_abundance_data, exp)
 
 
 # Remove burn in and sample every n years to reduce data for plotting
@@ -124,8 +119,6 @@ for (i in seq_along(subset_simulation_data_long)) {
   
 }
 
-# head(subset_simulation_data_long[[1]])
-
 # Add grouping variables to prepare data for plotting
 
 plot_data <- list()
@@ -142,7 +135,6 @@ for (i in seq_along(subset_simulation_data_long)) {
     mutate(group = 
              str_sub(subset_simulation_data_long[[i]]$functional_group, 
                      start = 1, end= 2)) %>%
-    # filter(timestep >= burnin) %>%
     mutate(functional_group_name = ifelse(group == 10, "herbivorous endotherms",
                                    ifelse(group == 11, "carnivorous  endotherms",
                                    ifelse(group == 12, "omnivorous  endotherms",
@@ -156,10 +148,6 @@ for (i in seq_along(subset_simulation_data_long)) {
     mutate(mean_group_abundance = mean(abundance))
   
 }
-
-# dim(plot_data[[1]])
-# 
-# head(plot_data[[1]])
 
 # Plot
 
@@ -182,12 +170,6 @@ for (i  in seq_along(plot_data)) {
   
 }
 
-# abundance_plots[[1]]
-# abundance_plots[[2]]
-# abundance_plots[[3]]
-# abundance_plots[[4]]
-# abundance_plots[[5]]
-
 for (i in seq_along(abundance_plots)) {
   
   ggsave(file.path(output_path, paste(plot_names[[i]],".pdf")), abundance_plots[[i]])
@@ -196,18 +178,14 @@ for (i in seq_along(abundance_plots)) {
 
 # Plot log biomass of functional groups ----
 
-biomass_files <- paste(simulation_path, files[str_detect(files, "biomass.rds")], sep = "\\")
+biomass_files <- paste(simulation_path, files[str_detect(files, "biomass.rds")], 
+                       sep = "\\")
 
-
-#biomass_files <- biomass_files[1:2] # TEMP CODE - subset so you don't read everything in
-
-biomass_plot_names <- paste("Simulation", simulation_number, "replicate", replicate_numbers, 
+biomass_plot_names <- paste("Simulation", simulation_number, "replicate", 
+                            replicate_numbers, 
                     "log biomass by heterotrophic functional group", sep = " ")
 
 simulation_biomass_data <- lapply(biomass_files, readRDS)
-
-#simulation_biomass_data <- lapply(simulation_biomass_data, exp)
-
 
 # Remove burn in and sample every n years to reduce data for plotting
 
@@ -237,7 +215,6 @@ for (i in seq_along(subset_biomass_simulation_data_long)) {
   
 }
 
-# head(subset_biomass_simulation_data_long[[1]])
 
 # Add grouping variables to prepare data for plotting
 
@@ -245,9 +222,11 @@ biomass_plot_data <- list()
 
 for (i in seq_along(subset_biomass_simulation_data_long)) {
   
-  names(subset_biomass_simulation_data_long[[i]]) <- c("functional_group", "timestep", "biomass")
+  names(subset_biomass_simulation_data_long[[i]]) <- c("functional_group", 
+                                                       "timestep", "biomass")
   
-  subset_biomass_simulation_data_long[[i]]$functional_group <- as.character(subset_biomass_simulation_data_long[[i]]$functional_group)
+  subset_biomass_simulation_data_long[[i]]$functional_group <- as.character(
+    subset_biomass_simulation_data_long[[i]]$functional_group)
   
   subset_biomass_simulation_data_long[[i]] <- subset_biomass_simulation_data_long[[i]][!is.na(subset_biomass_simulation_data_long[[i]]$biomass),]
   
@@ -255,7 +234,6 @@ for (i in seq_along(subset_biomass_simulation_data_long)) {
     mutate(group = 
              str_sub(subset_biomass_simulation_data_long[[i]]$functional_group, 
                      start = 1, end= 2)) %>%
-    # filter(timestep >= burnin) %>%
     mutate(functional_group_name = ifelse(group == 10, "herbivorous endotherms",
                                           ifelse(group == 11, "carnivorous  endotherms",
                                                  ifelse(group == 12, "omnivorous  endotherms",
@@ -264,15 +242,11 @@ for (i in seq_along(subset_biomass_simulation_data_long)) {
                                                                       ifelse(group == 15, "omnivorous ectotherms", 
                                                                              "NA"))))))) %>%
     arrange(functional_group, timestep) %>%
-    mutate(bodymass_bin = str_sub(functional_group, start= -2)) %>%
+    mutate(bodymass_bin = str_sub(functional_group, start = -2)) %>%
     group_by(group, timestep) %>%
     mutate(mean_group_biomass = mean(biomass))
   
 }
-
-# dim(biomass_plot_data[[1]])
-# 
-# head(biomass_plot_data[[1]])
 
 # Plot
 
@@ -295,11 +269,6 @@ for (i  in seq_along(biomass_plot_data)) {
   
 }
 
-# biomass_plots[[1]]
-# biomass_plots[[2]]
-# biomass_plots[[3]]
-# biomass_plots[[4]]
-# biomass_plots[[5]]
 
 for (i in seq_along(biomass_plots)) {
   
@@ -315,17 +284,17 @@ for (i in seq_along(subset_biomass_simulation_data)) {
   
 }
 
+# Take the mean of biomass across replicates
+
 mean_biomass <- Reduce('+', subset_biomass_simulation_data)/
                             length(subset_biomass_simulation_data)
 
-
 mean_biomass_long <- melt(mean_biomass)
 names(mean_biomass_long) <- c("functional_group", "timestep", "mean_biomass")
-# mean_biomass_plot_data <- mean_biomass_long
 
 
 mean_biomass_plot_data <- mean_biomass_long %>%
-        mutate(bodymass_bin = str_sub(functional_group, start= -2)) %>%
+        mutate(bodymass_bin = str_sub(functional_group, start = -2)) %>%
         mutate(group = str_sub(mean_biomass_long$functional_group, 
                                start = 1, end = 2)) %>%
         arrange(functional_group, timestep) %>%
@@ -359,9 +328,13 @@ mean_biomass_plot <- ggplot() +
                      facet_wrap( ~ functional_group_name)
 
 
-mean_biomass_plot_95_CI <- mean_biomass_plot + geom_ribbon(aes(x = timestep,ymin = group_lb, 
-                                                 ymax = group_ub, fill = functional_group_name), 
-                                             alpha = 0.2, data = mean_biomass_plot_data) 
+mean_biomass_plot_95_CI <- mean_biomass_plot + 
+                           geom_ribbon(aes(x = timestep,
+                                           ymin = group_lb, 
+                                           ymax = group_ub, 
+                                           fill = functional_group_name), 
+                                           alpha = 0.2, 
+                                           data = mean_biomass_plot_data) 
 mean_biomass_plot_95_CI
 
 ggsave(file.path(output_path, paste("Simulation", simulation_number,
@@ -409,7 +382,6 @@ for (i in seq_along(subset_simulation_auto_data_long)) {
   
 }
 
-# head(subset_simulation_auto_data_long[[1]])
 
 # Name columns to prepare data for plotting
 
@@ -425,9 +397,6 @@ for (i in seq_along(subset_simulation_auto_data_long)) {
   
   
 }
-
-# head(auto_plot_data[[1]])
-# class(auto_plot_data[[1]]$new_timestep)
 
 # Plot
 
@@ -447,16 +416,10 @@ for (i  in seq_along(auto_plot_data)) {
   
 }
 
-# 
-# autotroph_plots[[1]]
-# autotroph_plots[[2]]
-# autotroph_plots[[3]]
-# autotroph_plots[[4]]
-# autotroph_plots[[5]]
-
 for (i in seq_along(biomass_plots)) {
   
-  ggsave(file.path(output_path, paste(auto_plot_names[[i]],".pdf")), autotroph_plots[[i]])
+  ggsave(file.path(output_path, paste(auto_plot_names[[i]],".pdf")), 
+         autotroph_plots[[i]])
   
 }
 
@@ -467,8 +430,7 @@ print(paste("Plots for", simulation_number,
   
   print(paste("Functional group plots for Simulation", simulation_number, 
               "already exist"))
-}
-
+  }
 }
 
 
