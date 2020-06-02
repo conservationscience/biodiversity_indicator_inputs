@@ -2,7 +2,7 @@
 # Git repo "C:\\Users\\ssteven\\Dropbox\\Deakin\\Serengeti-analysis\\model_outputs_to_indicator_inputs\\1_process_outputs"
 
 
-#' TODO: Automate the vertical lines representing impact start and end
+#' TODO: Automate the vertical lines representing impact start and end for autotrophs
 #' TODO: IMPORTANT - add a plot of mean autototroph values
 #' 
 #' This function plots the model outputs by functional group so you can have a 
@@ -16,11 +16,6 @@
 #' @param simulation_number A string that denotes the number of the simulation
 #' you are processing outputs for
 #' 
-#' @param startimpact Integer that denotes where you want to place the vertical
-#' red line that denotes the beginning of impact
-#' 
-#' @param endimpact Integer that denotes where you want to place the vertical
-#' green line that denotes the beginning of impact
 #' 
 #' @param n Integer that denotes which timestep you want to sample. n = 1 will
 #' include all timesteps, n = 12 will select the last timestep in each year, and so on.
@@ -41,36 +36,28 @@
 # dev_mode <- TRUE
 # 
 # if(dev_mode == TRUE) {
-# 
-# burnin <- 1*12
-# 
 # simulation_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life\\Test_runs\\ae_BuildModel"
-# output_path <- simulation_path
 # simulation_number <- "ae"
-# 
 # burnin <- 0
-# startimpact <- 12
-# endimpact <- 24
-# sample_year <- 1
 # n <- 1
 # 
 # } else {
 # 
-# simulation_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life\\Harvesting_herbivores\\301_BuildModel"
+# simulation_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life\\Harvesting_carnivores\\209_BuildModel"
 # output_path <- simulation_path
 # 
 # burnin <- 1000 * 12
-# startimpact <- 1100 * 12
-# endimpact <- 1200 * 12
+# startimpact <- 100
+# endimpact <- 200
 # sample_year <- 5*12
-# n <- 12
+# n <- 96
+# simulation_number <- "209"
 # 
 # }
 # 
-# plot_functional_groups(simulation_path, simulation_number, startimpact, endimpact,n)
+# plot_functional_groups(simulation_path, simulation_number, n)
 
-plot_functional_groups <- function(simulation_path, simulation_number, startimpact,
-                                   endimpact, n) {
+plot_functional_groups <- function(simulation_path, simulation_number, n) {
   
   require(tidyverse)
   require(reshape2)
@@ -171,8 +158,9 @@ for (i  in seq_along(plot_data)) {
     geom_line(aes(y = mean_group_abundance, x = timestep), 
               data = plot_data[[i]], size = 1) +
     theme(legend.position = "none") +
-    geom_vline(xintercept = 10, color = "red") +
-    geom_vline(xintercept = 20 , color = "dark green") +
+    geom_vline(xintercept = max(plot_data[[i]]$timestep)/3, color = "red") +
+    geom_vline(xintercept = ( max(plot_data[[i]]$timestep)/3) *2 ,
+               color = "dark green") +
     facet_wrap(~ functional_group_name, ncol = 3) +
     ggtitle(plot_names[[i]])
   
@@ -205,6 +193,8 @@ for (i in seq_along(simulation_biomass_data)) {
   
   temp <- simulation_biomass_data[[i]][,burnin:ncol(simulation_biomass_data[[i]])]
   
+  temp[temp == -9999] <- NA
+  
   sample <- seq(1, ncol(temp), by = n)
   
   subset_biomass_simulation_data[[i]] <- temp[,sample]
@@ -219,11 +209,11 @@ subset_biomass_simulation_data_long <- lapply(subset_biomass_simulation_data, me
 
 # Replace no value with NA
 
-for (i in seq_along(subset_biomass_simulation_data_long)) {
-  
-  subset_biomass_simulation_data_long[[i]][subset_biomass_simulation_data_long[[i]] == -9999] <- NA
-  
-}
+# for (i in seq_along(subset_biomass_simulation_data_long)) {
+#   
+#   subset_biomass_simulation_data_long[[i]][subset_biomass_simulation_data_long[[i]] == -9999] <- NA
+#   
+# }
 
 
 # Add grouping variables to prepare data for plotting
@@ -270,14 +260,17 @@ for (i  in seq_along(biomass_plot_data)) {
     geom_line(aes(y = mean_group_biomass, x = timestep), 
               data = biomass_plot_data[[i]], size = 1) +
     theme(legend.position = "none") +
-    geom_vline(xintercept = 10, color = "red") +
-    geom_vline(xintercept = 20 , color = "dark green") +
+    geom_vline(xintercept = max(biomass_plot_data[[i]]$timestep)/3, 
+               color = "red") +
+    geom_vline(xintercept = (max(biomass_plot_data[[i]]$timestep)/3)*2 ,
+               color = "dark green") +
     facet_wrap(~ functional_group_name, ncol = 3) +
     ggtitle(biomass_plot_names[[i]])
   
   biomass_plots[[i]]
   
 }
+
 
 
 for (i in seq_along(biomass_plots)) {
@@ -288,16 +281,51 @@ for (i in seq_along(biomass_plots)) {
 
 # Plot mean biomass ----
 
-for (i in seq_along(subset_biomass_simulation_data)) {
-  
-  subset_biomass_simulation_data[[i]][subset_biomass_simulation_data[[i]] == -9999] <- NA
-  
-}
+# for (i in seq_along(subset_biomass_simulation_data)) {
+#   
+#   subset_biomass_simulation_data[[i]][subset_biomass_simulation_data[[i]] == -9999] <- NA
+#   
+# }
 
 # Take the mean of biomass across replicates
+# 
+# data_check <- biomass_plot_data
+# 
+# head(data_check[[1]])
+
+# all_lions <- list()
+# 
+# for (i in seq_along(data_check)) {
+#   
+#   all_lions[[i]] <- data_check[[i]] %>%
+#     mutate(bodymass_bin = str_sub(Var1, start = -2)) %>%
+#     mutate(group = str_sub(Var1, 
+#                            start = 1, end = 2)) %>%
+#     filter(group == 11) %>%
+#     mutate(rep = i)
+# }
+
+# all_lions <- list()
+# 
+# for (i in seq_along(data_check)) {
+#   
+#   all_lions[[i]] <- data_check[[i]] %>%
+#                     filter(functional_group_name == "carnivorous endotherms")
+# }
+# 
+# all_lions_df <- do.call(rbind, all_lions)
+# 
+# head(all_lions_df)
+# 
+# all(is.na(all_lions$value))
 
 mean_biomass <- Reduce('+', subset_biomass_simulation_data)/
                             length(subset_biomass_simulation_data)
+
+a <- subset_biomass_simulation_data
+x <- Reduce("+", lapply(a, function(x) replace(x, is.na(x), 0))) / 
+  Reduce("+", lapply(a, Negate(is.na)))
+mean_biomass <- x
 
 mean_biomass_long <- melt(mean_biomass)
 names(mean_biomass_long) <- c("functional_group", "timestep", "mean_biomass")
@@ -328,14 +356,17 @@ mean_biomass_plot <- ggplot() +
                                     colour = functional_group_name),
                                 data =  mean_biomass_plot_data) +
                      theme(legend.position = "none") +
-                     geom_vline(xintercept = startimpact, color = "red") +
-                     geom_vline(xintercept = endimpact , color = "dark green") +
+                     geom_vline(xintercept = max(mean_biomass_plot_data$timestep)/3,
+                                color = "red") +
+                     geom_vline(xintercept = (max(mean_biomass_plot_data$timestep)/3)*2,
+                                color = "dark green") +
                      ggtitle(paste("Simulation", simulation_number, 
                                    "mean biomass by functional group")) +
                      theme(panel.grid.major = element_blank(),
                             panel.grid.minor = element_blank(),
                             panel.background = element_blank()) + 
-                     theme(legend.position="right")
+                     theme(legend.position="right") +
+                     facet_wrap(~ functional_group_name)
 
 
 
@@ -344,7 +375,7 @@ mean_biomass_plot_95_CI <- mean_biomass_plot +
                                            ymin = group_lb, 
                                            ymax = group_ub, 
                                            fill = functional_group_name), 
-                                           alpha = 0.2, 
+                                           alpha = 0.4, 
                                            data = mean_biomass_plot_data) 
 mean_biomass_plot_95_CI
 
@@ -405,8 +436,7 @@ for (i in seq_along(subset_simulation_auto_data_long)) {
   
   auto_plot_data[[i]] <- subset_simulation_auto_data_long[[i]] %>%
                          mutate(new_timestep = as.numeric(substring(timestep,2))) 
-  
-  
+                        
 }
 
 # Plot
@@ -415,19 +445,26 @@ autotroph_plots <- list()
 
 for (i  in seq_along(auto_plot_data)) {
   
-    autotroph_plots[[i]] <- ggplot() +
+  range <- range(auto_plot_data[[i]]$new_timestep, na.rm = TRUE)
+  range <- (c(range[1]: range[2]))
+  start <- min(range) + 100*12 
+  end <- max(range) - 100 *12
+    
+  autotroph_plots[[i]] <- ggplot() +
     geom_path(aes(y = biomass, x = new_timestep, colour = functional_group),
               data =  auto_plot_data[[i]]) +
     theme(legend.position = "right") +
-    geom_vline(xintercept = 12*1100, color = "red") +
-    geom_vline(xintercept = 12*1200 , color = "dark green") +
+    geom_vline(xintercept =  start, 
+               color = "red") +
+    geom_vline(xintercept = end , 
+               color = "dark green") +
     ggtitle(auto_plot_names[[i]])
   
   autotroph_plots[[i]]
   
 }
 
-for (i in seq_along(biomass_plots)) {
+for (i in seq_along(autotroph_plots)) {
   
   ggsave(file.path(output_path, paste(auto_plot_names[[i]],".pdf")), 
          autotroph_plots[[i]])
