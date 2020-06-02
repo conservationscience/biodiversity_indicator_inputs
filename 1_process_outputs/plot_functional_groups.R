@@ -16,6 +16,15 @@
 #' @param simulation_number A string that denotes the number of the simulation
 #' you are processing outputs for
 #' 
+#' @param startimpact Integer that denotes where you want to place the vertical
+#' red line that denotes the beginning of impact
+#' 
+#' @param endimpact Integer that denotes where you want to place the vertical
+#' green line that denotes the beginning of impact
+#' 
+#' @param n Integer that denotes which timestep you want to sample. n = 1 will
+#' include all timesteps, n = 12 will select the last timestep in each year, and so on.
+#' 
 #' @return Doesn't return anything to the environment, but will create 
 #' a 'functional group plots' directory in the simulation directory, to
 #' which it saves three different plots (heterotroph abundance and biomass and
@@ -54,13 +63,14 @@
 # startimpact <- 1100 * 12
 # endimpact <- 1200 * 12
 # sample_year <- 5*12
-# n <- 120
+# n <- 12
 # 
 # }
 # 
-# plot_functional_groups(simulation_path, simulation_number)
+# plot_functional_groups(simulation_path, simulation_number, startimpact, endimpact,n)
 
-plot_functional_groups <- function(simulation_path, simulation_number) {
+plot_functional_groups <- function(simulation_path, simulation_number, startimpact,
+                                   endimpact, n) {
   
   require(tidyverse)
   require(reshape2)
@@ -318,14 +328,15 @@ mean_biomass_plot <- ggplot() +
                                     colour = functional_group_name),
                                 data =  mean_biomass_plot_data) +
                      theme(legend.position = "none") +
-                     geom_vline(xintercept = 12*1, color = "red") +
-                     geom_vline(xintercept = 12*2 , color = "dark green") +
+                     geom_vline(xintercept = startimpact, color = "red") +
+                     geom_vline(xintercept = endimpact , color = "dark green") +
                      ggtitle(paste("Simulation", simulation_number, 
                                    "mean biomass by functional group")) +
                      theme(panel.grid.major = element_blank(),
                             panel.grid.minor = element_blank(),
-                            panel.background = element_blank()) +
-                     facet_wrap( ~ functional_group_name)
+                            panel.background = element_blank()) + 
+                     theme(legend.position="right")
+
 
 
 mean_biomass_plot_95_CI <- mean_biomass_plot + 
