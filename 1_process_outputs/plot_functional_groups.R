@@ -207,15 +207,6 @@ rm(temp)
 
 subset_biomass_simulation_data_long <- lapply(subset_biomass_simulation_data, melt)
 
-# Replace no value with NA
-
-# for (i in seq_along(subset_biomass_simulation_data_long)) {
-#   
-#   subset_biomass_simulation_data_long[[i]][subset_biomass_simulation_data_long[[i]] == -9999] <- NA
-#   
-# }
-
-
 # Add grouping variables to prepare data for plotting
 
 biomass_plot_data <- list()
@@ -281,51 +272,10 @@ for (i in seq_along(biomass_plots)) {
 
 # Plot mean biomass ----
 
-# for (i in seq_along(subset_biomass_simulation_data)) {
-#   
-#   subset_biomass_simulation_data[[i]][subset_biomass_simulation_data[[i]] == -9999] <- NA
-#   
-# }
+mean_biomass <- Reduce("+", lapply(subset_biomass_simulation_data, 
+                        function(x) replace(x, is.na(x), 0))) / 
+                Reduce("+", lapply(subset_biomass_simulation_data, Negate(is.na)))
 
-# Take the mean of biomass across replicates
-# 
-# data_check <- biomass_plot_data
-# 
-# head(data_check[[1]])
-
-# all_lions <- list()
-# 
-# for (i in seq_along(data_check)) {
-#   
-#   all_lions[[i]] <- data_check[[i]] %>%
-#     mutate(bodymass_bin = str_sub(Var1, start = -2)) %>%
-#     mutate(group = str_sub(Var1, 
-#                            start = 1, end = 2)) %>%
-#     filter(group == 11) %>%
-#     mutate(rep = i)
-# }
-
-# all_lions <- list()
-# 
-# for (i in seq_along(data_check)) {
-#   
-#   all_lions[[i]] <- data_check[[i]] %>%
-#                     filter(functional_group_name == "carnivorous endotherms")
-# }
-# 
-# all_lions_df <- do.call(rbind, all_lions)
-# 
-# head(all_lions_df)
-# 
-# all(is.na(all_lions$value))
-
-mean_biomass <- Reduce('+', subset_biomass_simulation_data)/
-                            length(subset_biomass_simulation_data)
-
-a <- subset_biomass_simulation_data
-x <- Reduce("+", lapply(a, function(x) replace(x, is.na(x), 0))) / 
-  Reduce("+", lapply(a, Negate(is.na)))
-mean_biomass <- x
 
 mean_biomass_long <- melt(mean_biomass)
 names(mean_biomass_long) <- c("functional_group", "timestep", "mean_biomass")
@@ -480,6 +430,31 @@ print(paste("Plots for", simulation_number,
               "already exist"))
   }
 }
+
+
+
+#' TODO: Think about where all these outputs should be saved
+#' 
+#' This function summarises the biomass data of all replicates in a single 
+#' scenario. It should produce a plot of mean biomass over time for the six functional
+#' groups which it saves to the scenario folder, along with the biomass time
+#' series plot data
+#' 
+#' @param processed_scenario_path A string that denotes the file path for
+#' that scenario where all the individual simulation folders reside
+#' 
+#' @param scenario A string - the name of the scenario 
+#' 
+#' @param n Integer that denotes which timestep you want to sample. n = 1 will
+#' include all timesteps, n = 12 will select the last timestep in each year, and so on.
+#' 
+#' @param burnin Integer that denotes how many monthly timesteps the burnin lasts
+#' for, so it can be removed from the data (eg if the simulation has a burnin
+#' period of 100 years, burnin should be 1000 * 12 = 12000)
+#' 
+#' @return should produce a plot of mean biomass over time for the six functional
+#' groups which it saves to the scenario folder, along with the biomass time
+#' series plot data
 
 # processed_scenario_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life\\Test_runs"
 # scenario <- "Test runs"
@@ -642,6 +617,22 @@ ggsave(file.path(output_path, paste(scenario,
 mean_biomass_plot_95_CI  
    
 }
+
+#' This function summarises the biomass data of all replicates, for all 
+#' scenarios, using the output data produced by the plot_scenario_functional_groups
+#' function. It should produce a plot of mean biomass over time for six functional
+#' groups, with a separate panel for each scenario, which it saves to the 
+#' scenario folder, along with the biomass time series plot data
+#' 
+#' @param processed_scenario_paths A vector of strings, each element in the
+#' vector is the file path for one scenario's processed outputs
+#' 
+#' @param output_path A string - the filepath for the directory you want to
+#' save the plot
+#' 
+#' @return should produce a plot of mean biomass over time for the six functional
+#' groups which it saves to the scenario folder, along with the biomass time
+#' series plot data
 
 # processed_outputs_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life"
 # 
