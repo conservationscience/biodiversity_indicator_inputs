@@ -57,7 +57,7 @@
 # 
 # plot_functional_groups(simulation_path, simulation_number, n)
 
-plot_functional_groups <- function(simulation_path, simulation_number, n) {
+plot_simulation_functional_groups <- function(simulation_path, simulation_number, n) {
   
   require(tidyverse)
   require(reshape2)
@@ -481,4 +481,237 @@ print(paste("Plots for", simulation_number,
   }
 }
 
+# processed_scenario_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life\\Test_runs"
+# scenario <- "Test runs"
+# n <- 1
+# burnin <- 0
+# 
+# testruns <- plot_scenario_functional_groups(processed_scenario_path, scenario, burnin,n)
+# testruns
+# 
+# processed_scenario_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life\\Harvesting_carnivores"
+# scenario <- "Harvesting carnivores"
+# n <- 96
+# burnin <- 1000 * 12
+# 
+# carnivores <- plot_scenario_functional_groups(processed_scenario_path, scenario, burnin,n)
+# carnivores
+# 
+# processed_scenario_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life\\Harvesting_herbivores"
+# scenario <- "Harvesting herbivores"
+# 
+# herbivores <- plot_scenario_functional_groups(processed_scenario_path, scenario, burnin,n)
+# herbivores
+# 
+# processed_scenario_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life\\Land_use"
+# scenario <- "Land use"
+# 
+# landuse <- plot_scenario_functional_groups(processed_scenario_path, scenario, burnin,n)
+# landuse
+# 
+# processed_scenario_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life\\Baseline"
+# scenario <- "Baseline"
+# 
+# baseline <- plot_scenario_functional_groups(processed_scenario_path, scenario, burnin,n)
+# baseline
+
+plot_scenario_functional_groups <- function(processed_scenario_path, 
+                                            scenario, 
+                                            burnin, n) {
+  
+  require(tidyverse)
+  require(reshape2)
+  require(ggplot2)
+  
+output_path <- processed_scenario_path
+  
+scenario_simulation_paths <- list.dirs(processed_scenario_path, recursive = FALSE) 
+  
+  # Get the file paths for each simulation within the scenario
+  
+  replicate_paths <- list()
+  replicate_numbers <- list()
+  
+  for (k in seq_along(scenario_simulation_paths)) { # For each simulation
+    
+    single_simulation_path <- scenario_simulation_paths[k]
+    
+    single_simulation_replicates <- list.files(single_simulation_path, 
+                                               pattern = "biomass.rds") # list the biomass files for that simulation and store
+    
+    replicate_paths[[k]] <- file.path(single_simulation_path, 
+                                      single_simulation_replicates)
+    
+    replicate_numbers[[k]] <- 0:(length( single_simulation_replicates) - 1)
+    
+  }
+  
+replicate_paths <- unlist(replicate_paths)
+
+biomass_data <- lapply(replicate_paths, readRDS)
+
+scenario_biomass_data <- lapply(replicate_paths, readRDS)
+
+subset_scenario_biomass_data <- list()
+
+for (i in seq_along(scenario_biomass_data)) {
+  
+  scenario_biomass_data[[i]][scenario_biomass_data[[i]] == -9999] <- NA
+  
+  temp <- scenario_biomass_data[[i]][,burnin:ncol(scenario_biomass_data[[i]])]
+  
+  sample <- seq(1, ncol(temp), by = n)
+  
+  subset_scenario_biomass_data[[i]] <- temp[,sample]
+  
+  }
+
+rm(temp)
+
+mean_scenario_biomass <- Reduce("+", lapply(subset_scenario_biomass_data, 
+                         function(x) replace(x, is.na(x), 0))) / 
+                         Reduce("+", lapply(subset_scenario_biomass_data, 
+                                            Negate(is.na)))
+
+mean_scenario_biomass_long <- melt(mean_scenario_biomass)
+
+names(mean_scenario_biomass_long) <- c("functional_group", 
+                                       "timestep", "mean_biomass")
+
+
+mean_biomass_plot_data <- mean_scenario_biomass_long %>%
+  mutate(bodymass_bin = str_sub(functional_group, start = -2)) %>%
+  mutate(group = str_sub(mean_scenario_biomass_long$functional_group, 
+                         start = 1, end = 2)) %>%
+  arrange(functional_group, timestep) %>%
+  group_by(group, timestep) %>%
+  dplyr::summarise(group_mean = mean(mean_biomass, na.rm = TRUE),
+                   group_sd = sd(mean_biomass, na.rm = TRUE),
+                   n = n(),
+                   group_se = group_sd/sqrt(n),
+                   group_lb = group_mean - (1.96 * group_se),
+                   group_ub = group_mean + (1.96 * group_se)) %>%
+  mutate(functional_group_name = ifelse(group == 10, "herbivorous endotherms",
+                                 ifelse(group == 11, "carnivorous  endotherms",
+                                 ifelse(group == 12, "omnivorous  endotherms",
+                                 ifelse(group == 13, "herbivorous ectotherms", # combine iteroparous and semelparous ectotherms
+                                 ifelse(group == 14, "carnivorous ectotherms",
+                                 ifelse(group == 15, "omnivorous ectotherms", 
+                                        "NA"))))))) %>%
+  mutate(scenario = scenario)
+
+mean_biomass_plot <- ggplot() +
+  geom_path(aes(y = group_mean, x = timestep, 
+                colour = functional_group_name),
+            data =  mean_biomass_plot_data,
+            size = 1.5) +
+  theme(legend.position = "none") +
+  geom_vline(xintercept = max(mean_biomass_plot_data$timestep)/3,
+             color = "red") +
+  geom_vline(xintercept = (max(mean_biomass_plot_data$timestep)/3)*2,
+             color = "dark green") +
+  ggtitle(paste(scenario, 
+                "mean biomass by functional group")) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank()) + 
+  theme(legend.position="right") +
+  facet_wrap(~ functional_group_name)
+
+
+
+mean_biomass_plot_95_CI <- mean_biomass_plot + 
+                           geom_ribbon(aes(x = timestep,
+                                            ymin = group_lb, 
+                                            ymax = group_ub, 
+                                            fill = functional_group_name), 
+                                        alpha = 0.4, 
+                                        data = mean_biomass_plot_data) 
+
+
+
+saveRDS(mean_biomass_plot_data, file.path(output_path, 
+                                          paste(scenario, 
+                                                "mean_biomass_plot_data.rds", 
+                                                sep = "_")))                           
+ggsave(file.path(output_path, paste(scenario, 
+                                    "mean biomass by functional group.pdf",
+                                    sep = " ")),
+                 mean_biomass_plot_95_CI) 
+
+mean_biomass_plot_95_CI  
+   
+}
+
+# processed_outputs_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life"
+# 
+# processed_scenario_paths <- c("N:/Quantitative-Ecology/Indicators-Project/Serengeti/Outputs_from_adaptor_code/map_of_life/Baseline",             
+#                               "N:/Quantitative-Ecology/Indicators-Project/Serengeti/Outputs_from_adaptor_code/map_of_life/Harvesting_carnivores",
+#                               "N:/Quantitative-Ecology/Indicators-Project/Serengeti/Outputs_from_adaptor_code/map_of_life/Harvesting_herbivores",
+#                               "N:/Quantitative-Ecology/Indicators-Project/Serengeti/Outputs_from_adaptor_code/map_of_life/Land_use") 
+
+
+plot_all_functional_groups <- function(processed_scenario_paths, output_path) {
+  
+  require(tidyverse)
+  require(reshape2)
+  require(ggplot2)
+  
+  # Get the processed plot data for each scenario
+  
+  all_plot_data <- list()
+  
+  for (i in seq_along(processed_scenario_paths)) {
+
+  files <- list.files(processed_scenario_paths[i], recursive = FALSE) 
+    
+  all_plot_data[[i]] <- readRDS(paste(processed_scenario_paths[i], 
+                          files[str_detect(files, "mean_biomass_plot_data.rds")], 
+                             sep = "\\"))
+  
+  }
+  
+all_plot_data_df <- do.call(rbind, all_plot_data)
+
+all_scenarios_plot <- ggplot() +
+                     geom_path(aes(y = group_mean, x = timestep, 
+                                  colour = functional_group_name),
+                              data =  all_plot_data_df,
+                              size = 1) +
+                     theme(legend.position = "none") +
+                     geom_vline(xintercept = max(all_plot_data_df$timestep)/3,
+                               color = "red") +
+                     geom_vline(xintercept = (max(all_plot_data_df$timestep)/3)*2,
+                               color = "dark green") +
+                     ggtitle("Mean biomass over time by scenario") +
+                     theme(panel.grid.major = element_blank(),
+                          panel.grid.minor = element_blank(),
+                          panel.background = element_blank()) + 
+                     theme(legend.position="right") +
+                     facet_wrap(~ scenario)
+
+
+
+mean_biomass_plot_95_CI <- all_scenarios_plot + 
+                           geom_ribbon(aes(x = timestep,
+                                            ymin = group_lb, 
+                                            ymax = group_ub, 
+                                            fill = functional_group_name), 
+                                        alpha = 0.3, 
+                                        data = all_plot_data_df) 
+                          
+                          
+                          
+saveRDS(all_plot_data_df, file.path(output_path, 
+                                          paste(scenario, 
+                                                "all_scenarios_plot_data.rds", 
+                                                sep = "_")))                           
+                          
+ggsave(file.path(output_path, "Mean biomass over time by scenario.pdf"),
+                                 mean_biomass_plot_95_CI) 
+
+mean_biomass_plot_95_CI 
+  
+  
+}
 
