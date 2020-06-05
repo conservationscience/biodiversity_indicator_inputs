@@ -55,7 +55,7 @@
 # 
 # }
 # 
-# plot_functional_groups(simulation_path, simulation_number, n)
+# plot_simulation_functional_groups(simulation_path, simulation_number, n)
 
 plot_simulation_functional_groups <- function(simulation_path, simulation_number, n) {
   
@@ -170,7 +170,8 @@ for (i  in seq_along(plot_data)) {
 
 for (i in seq_along(abundance_plots)) {
   
-  ggsave(file.path(output_path, paste(plot_names[[i]],".pdf")), abundance_plots[[i]])
+  ggsave(file.path(output_path, paste(plot_names[[i]],".png")), 
+         height = 8, width = 16, abundance_plots[[i]])
 
 }
 
@@ -266,7 +267,9 @@ for (i  in seq_along(biomass_plot_data)) {
 
 for (i in seq_along(biomass_plots)) {
   
-  ggsave(file.path(output_path, paste(biomass_plot_names[[i]],".pdf")), biomass_plots[[i]])
+  ggsave(file.path(output_path, paste(biomass_plot_names[[i]],".png")),
+         height = 8, width = 16, 
+         biomass_plots[[i]])
   
 }
 
@@ -330,8 +333,9 @@ mean_biomass_plot_95_CI <- mean_biomass_plot +
 mean_biomass_plot_95_CI
 
 ggsave(file.path(output_path, paste("Simulation", simulation_number,
-                                    "mean biomass by functional group.pdf", 
+                                    "mean biomass by functional group.png", 
                                     sep = " ")), 
+       height = 8, width = 16, 
        mean_biomass_plot_95_CI)
 
 # Plot autotroph biomass ----
@@ -416,8 +420,8 @@ for (i  in seq_along(auto_plot_data)) {
 
 for (i in seq_along(autotroph_plots)) {
   
-  ggsave(file.path(output_path, paste(auto_plot_names[[i]],".pdf")), 
-         autotroph_plots[[i]])
+  ggsave(file.path(output_path, paste(auto_plot_names[[i]],".png")), 
+         height = 8, width = 16, autotroph_plots[[i]])
   
 }
 
@@ -457,40 +461,43 @@ print(paste("Plots for", simulation_number,
 #' series plot data
 
 # processed_scenario_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life\\Test_runs"
+# output_folder <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_indicator_code\\Indicator_plots\\mean_biomass\\Test_runs"
 # scenario <- "Test runs"
 # n <- 1
 # burnin <- 0
 # 
-# testruns <- plot_scenario_functional_groups(processed_scenario_path, scenario, burnin,n)
+# testruns <- plot_single_scenario_functional_groups(processed_scenario_path, output_folder,
+#                                             scenario, burnin,n)
 # testruns
-# 
+# # 
 # processed_scenario_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life\\Harvesting_carnivores"
-# scenario <- "Harvesting carnivores"
+# output_folder <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_indicator_code\\Indicator_plots\\mean_biomass"
+# scenario <- "Harvesting_carnivores"
 # n <- 96
 # burnin <- 1000 * 12
 # 
-# carnivores <- plot_scenario_functional_groups(processed_scenario_path, scenario, burnin,n)
+# carnivores <- plot_single_scenario_functional_groups(processed_scenario_path, output_folder, scenario, burnin,n)
 # carnivores
 # 
 # processed_scenario_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life\\Harvesting_herbivores"
-# scenario <- "Harvesting herbivores"
+# scenario <- "Harvesting_herbivores"
 # 
-# herbivores <- plot_scenario_functional_groups(processed_scenario_path, scenario, burnin,n)
+# herbivores <- plot_single_scenario_functional_groups(processed_scenario_path, output_folder, scenario, burnin,n)
 # herbivores
 # 
 # processed_scenario_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life\\Land_use"
-# scenario <- "Land use"
+# scenario <- "Land_use"
 # 
-# landuse <- plot_scenario_functional_groups(processed_scenario_path, scenario, burnin,n)
+# landuse <- plot_single_scenario_functional_groups(processed_scenario_path, output_folder, scenario, burnin,n)
 # landuse
 # 
 # processed_scenario_path <- "N:\\Quantitative-Ecology\\Indicators-Project\\Serengeti\\Outputs_from_adaptor_code\\map_of_life\\Baseline"
 # scenario <- "Baseline"
 # 
-# baseline <- plot_scenario_functional_groups(processed_scenario_path, scenario, burnin,n)
+# baseline <- plot_single_scenario_functional_groups(processed_scenario_path,output_folder, scenario, burnin,n)
 # baseline
 
-plot_scenario_functional_groups <- function(processed_scenario_path, 
+plot_single_scenario_functional_groups <- function(processed_scenario_path, output_folder,
                                             scenario, 
                                             burnin, n) {
   
@@ -498,7 +505,10 @@ plot_scenario_functional_groups <- function(processed_scenario_path,
   require(reshape2)
   require(ggplot2)
   
-output_path <- processed_scenario_path
+  if( !dir.exists( file.path(output_folder) ) ) {
+    dir.create( file.path(output_folder), recursive = TRUE )
+    
+  }
   
 scenario_simulation_paths <- list.dirs(processed_scenario_path, recursive = FALSE) 
   
@@ -579,7 +589,7 @@ mean_biomass_plot <- ggplot() +
   geom_path(aes(y = group_mean, x = timestep, 
                 colour = functional_group_name),
             data =  mean_biomass_plot_data,
-            size = 1.5) +
+            size = 1) +
   theme(legend.position = "none") +
   geom_vline(xintercept = max(mean_biomass_plot_data$timestep)/3,
              color = "red") +
@@ -605,13 +615,14 @@ mean_biomass_plot_95_CI <- mean_biomass_plot +
 
 
 
-saveRDS(mean_biomass_plot_data, file.path(output_path, 
+saveRDS(mean_biomass_plot_data, file.path(output_folder, 
                                           paste(scenario, 
                                                 "mean_biomass_plot_data.rds", 
                                                 sep = "_")))                           
-ggsave(file.path(output_path, paste(scenario, 
-                                    "mean biomass by functional group.pdf",
+ggsave(file.path(output_folder, paste(scenario, 
+                                    "mean biomass by functional group.png",
                                     sep = " ")),
+                 height = 8, width = 16, 
                  mean_biomass_plot_95_CI) 
 
 mean_biomass_plot_95_CI  
@@ -641,8 +652,9 @@ mean_biomass_plot_95_CI
 #                               "N:/Quantitative-Ecology/Indicators-Project/Serengeti/Outputs_from_adaptor_code/map_of_life/Harvesting_herbivores",
 #                               "N:/Quantitative-Ecology/Indicators-Project/Serengeti/Outputs_from_adaptor_code/map_of_life/Land_use") 
 
+# plot_all_functional_groups(output_folder)
 
-plot_all_functional_groups <- function(processed_scenario_paths, output_path) {
+plot_all_scenarios_functional_groups <- function(output_folder) {
   
   require(tidyverse)
   require(reshape2)
@@ -650,19 +662,26 @@ plot_all_functional_groups <- function(processed_scenario_paths, output_path) {
   
   # Get the processed plot data for each scenario
   
-  all_plot_data <- list()
+  files <- list.files(output_folder)
+  files <- paste(output_folder, 
+            files[str_detect(files, ".rds")], 
+            sep = "\\")
   
-  for (i in seq_along(processed_scenario_paths)) {
-
-  files <- list.files(processed_scenario_paths[i], recursive = FALSE) 
-    
-  all_plot_data[[i]] <- readRDS(paste(processed_scenario_paths[i], 
-                          files[str_detect(files, "mean_biomass_plot_data.rds")], 
-                             sep = "\\"))
+  plot_data <- lapply(files,readRDS)
   
-  }
+  # all_plot_data <- list()
+  # 
+  # for (i in seq_along(processed_scenario_paths)) {
+  # 
+  # files <- list.files(processed_scenario_paths[i], recursive = FALSE) 
+  #   
+  # all_plot_data[[i]] <- readRDS(paste(processed_scenario_paths[i], 
+  #                         files[str_detect(files, "mean_biomass_plot_data.rds")], 
+  #                            sep = "\\"))
+  # 
+  # }
   
-all_plot_data_df <- do.call(rbind, all_plot_data)
+all_plot_data_df <- do.call(rbind, plot_data)
 
 all_scenarios_plot <- ggplot() +
                      geom_path(aes(y = group_mean, x = timestep, 
@@ -693,13 +712,11 @@ mean_biomass_plot_95_CI <- all_scenarios_plot +
                           
                           
                           
-saveRDS(all_plot_data_df, file.path(output_path, 
-                                          paste(scenario, 
-                                                "all_scenarios_plot_data.rds", 
-                                                sep = "_")))                           
+saveRDS(all_plot_data_df, file.path(output_folder, 
+                                    "all_scenarios_plot_data.rds"))                           
                           
-ggsave(file.path(output_path, "Mean biomass over time by scenario.pdf"),
-                                 mean_biomass_plot_95_CI) 
+ggsave(file.path(output_folder, "All scenarios mean biomass over time.png"),
+       height = 8, width = 16, mean_biomass_plot_95_CI) 
 
 mean_biomass_plot_95_CI 
   
